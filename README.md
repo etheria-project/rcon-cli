@@ -145,13 +145,16 @@ src/
 ### Creating a New Release
 
 1. Update `changelog.md` with your changes
-2. Run the release script:
-   - **Linux/macOS**: `./scripts/release.sh 1.1.0`
-   - **Windows**: `scripts\release.bat 1.1.0`
+2. Create and push a version tag:
+   ```bash
+   git tag v1.1.0
+   git push origin v1.1.0
+   ```
 
 When you push a version tag (`v*.*.*`), GitHub Actions automatically:
 - Builds cross-platform binaries (Windows, Linux, macOS)
 - Creates a GitHub release with changelog and downloadable archives
+- Updates the changelog with a new unreleased section
 
 ## Security Notes
 
