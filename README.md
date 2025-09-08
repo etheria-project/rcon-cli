@@ -1,293 +1,179 @@
-# 🎮 Minecraft RCON Client
+# RCON CLI
 
-A robust, TypeScript-based RCON (Remote Console) client for Minecraft servers built with [Bun](https://bun.sh). Features a clean modular architecture, full type safety, and both CLI and programmatic interfaces.
+A robust command-line interface for communicating with Minecraft servers using the RCON (Remote Console) protocol.
 
-## 🏗️ Architecture
+## Features
+
+- 🔌 **Full RCON Protocol Support** - Complete implementation of the Minecraft RCON protocol
+- 🚀 **Async/Await** - Built with Tokio for efficient async networking
+- 🎯 **Multiple Modes** - Single command execution, interactive sessions, and more
+- 🎨 **Rich Output** - Colored output and multiple formatting options (text/JSON)
+- 🔄 **Auto-Reconnection** - Automatic reconnection on connection loss
+- 📦 **Response Fragmentation** - Proper handling of large server responses
+- 🛡️ **Error Handling** - Comprehensive error handling and validation
+
+## Installation
+
+### From Source
+
+```bash
+git clone https://github.com/etheria-project/rcon-cli.git
+cd rcon-cli
+cargo build --release
+```
+
+The binary will be available at `target/release/rcon-cli`.
+
+**Prerequisites:** Rust 1.70+ and a Minecraft server with RCON enabled.
+
+## Quick Start
+
+1. **Enable RCON** in your `server.properties`:
+   ```properties
+   enable-rcon=true
+   rcon.password=your_password_here
+   rcon.port=25575
+   ```
+
+2. **Execute commands**:
+   ```bash
+   # Single command
+   ./rcon-cli -a localhost:25575 -p your_password exec "list"
+   
+   # Interactive session
+   ./rcon-cli -a localhost:25575 -p your_password interactive
+   ```
+
+## Usage
+
+```bash
+rcon-cli [OPTIONS] <COMMAND>
+```
+
+### Global Options
+
+- `-a, --address <HOST:PORT>` - Server address (default: localhost:25575)
+- `-p, --password <PASSWORD>` - RCON password (or use RCON_PASSWORD env var)
+- `-t, --timeout <SECONDS>` - Connection timeout (default: 5)
+- `-v, --verbose` - Increase logging verbosity
+- `-f, --format <FORMAT>` - Output format: text or json
+- `--no-color` - Disable colored output
+
+### Commands
+
+#### Execute Single Command
+```bash
+rcon-cli -a localhost:25575 -p secret exec "list"
+rcon-cli -a localhost:25575 -p secret exec --time "weather clear"
+```
+
+#### Interactive Mode
+```bash
+rcon-cli -a localhost:25575 -p secret interactive --prompt "minecraft> "
+```
+
+Interactive commands: `help`, `status`, `reconnect`, `quit`/`exit`
+
+#### Additional Commands
+```bash
+# Test connectivity
+rcon-cli -a localhost:25575 -p secret ping -c 5
+
+# Server information
+rcon-cli -a localhost:25575 -p secret info --detailed
+
+# List players
+rcon-cli -a localhost:25575 -p secret players --uuids
+```
+
+### Examples
+
+#### Environment Variables & JSON Output
+```bash
+export RCON_PASSWORD="your_secret_password"
+rcon-cli -a localhost:25575 -f json exec "list"
+```
+
+#### Common Minecraft Commands
+```bash
+# Player management
+rcon-cli exec "kick player_name reason"
+rcon-cli exec "gamemode creative player_name"
+
+# World management
+rcon-cli exec "time set day"
+rcon-cli exec "weather clear"
+
+# Server management
+rcon-cli exec "save-all"
+rcon-cli exec "whitelist add player_name"
+```
+
+## Library Usage
+
+```rust
+use rcon_cli::{RconClient, RconConfig};
+use std::net::SocketAddr;
+
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let addr = "localhost:25575".parse::<SocketAddr>()?;
+    let config = RconConfig::new(addr, "my_password");
+    
+    let mut client = RconClient::connect(config).await?;
+    let response = client.execute_command("list").await?;
+    
+    println!("Server response: {}", response);
+    Ok(())
+}
+```
+
+## Project Structure
 
 ```
 src/
-├── types/
-│   └── Packet.ts          # TypeScript interfaces and enums
-├── lib/
-│   ├── PacketBuilder.ts   # RCON packet creation and parsing utilities
-│   └── EventEmitter.ts    # Custom event emitter for client events
-├── client/
-│   └── RconClient.ts      # Main RCON client class
-├── cli/
-│   ├── RconCli.ts         # CLI interface class
-│   └── index.ts           # CLI entry point
-└── index.ts               # Main entry point with exports
+├── lib.rs          # Library root and public API
+├── main.rs         # Binary entry point
+├── cli.rs          # Command-line interface definitions
+├── client.rs       # RCON client implementation
+├── protocol.rs     # RCON protocol and packet handling
+└── error.rs        # Error types and handling
 ```
 
-## ✨ Features
+## Releases
 
-- **🔧 Clean Architecture** - Modular design with separation of concerns
-- **📘 Full TypeScript** - Complete type safety with comprehensive interfaces
-- **🎯 RCON Protocol Compliant** - Implements the full [Minecraft RCON specification](https://minecraft.wiki/w/RCON)
-- **⚡ Bun Native** - Uses Bun's built-in TCP support for optimal performance
-- **🎮 CLI Interface** - Easy-to-use command line tool with interactive mode
-- **📚 Library API** - Clean programmatic interface for integration
-- **🔗 Event-Driven** - Event emitter pattern for loose coupling
-- **📦 Fragmentation Handling** - Properly handles large responses split across multiple packets
-- **🔐 Authentication** - Secure password-based authentication
-- **⏱️ Timeout Management** - Configurable timeouts with proper cleanup
+### Creating a New Release
 
-## 📦 Installation
+1. Update `changelog.md` with your changes
+2. Run the release script:
+   - **Linux/macOS**: `./scripts/release.sh 1.1.0`
+   - **Windows**: `scripts\release.bat 1.1.0`
 
-```bash
-# Clone or copy the project
-git clone <your-repo>
-cd rcon
+When you push a version tag (`v*.*.*`), GitHub Actions automatically:
+- Builds cross-platform binaries (Windows, Linux, macOS)
+- Creates a GitHub release with changelog and downloadable archives
 
-# Install dependencies
-bun install
-```
+## Security Notes
 
-## 🚀 Usage
+⚠️ **Important:** RCON is not encrypted. Use strong passwords, limit to trusted networks, and consider SSH tunneling for remote access.
 
-### CLI Usage
+## Contributing
 
-```bash
-# Single command execution
-bun run cli -P your_password -c "list"
-bun run cli -P your_password -c "time set day"
-bun run cli -P your_password -c "weather clear"
+1. Fork the repository
+2. Create a feature branch
+3. Add tests for your changes
+4. Submit a pull request
 
-# Interactive mode
-bun run cli -P your_password -i
+## License
 
-# Custom server connection
-bun run cli -h 192.168.1.100 -p 25575 -P your_password -c "list"
+MIT License - see the LICENSE file for details.
 
-# Show help
-bun run cli:help
-```
+## Built from 💖 by Etheria
 
-#### CLI Options
+This project is crafted with love by the [Etheria](https://github.com/etheria-project) team. We're passionate about creating tools that make Minecraft server management easier and more enjoyable.
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `-h, --host` | RCON server host | `localhost` |
-| `-p, --port` | RCON server port | `25575` |
-| `-P, --password` | RCON password | *(required)* |
-| `-c, --command` | Execute single command | - |
-| `-i, --interactive` | Start interactive mode | `false` |
-| `--help` | Show help message | - |
+### Acknowledgments
 
-### Programmatic Usage
-
-```typescript
-import { RconClient, RconConfig } from './src/index.ts';
-
-// Basic usage
-const client = new RconClient({
-  host: 'localhost',
-  port: 25575,
-  password: 'your_rcon_password',
-  timeout: 5000 // optional, default: 5000ms
-});
-
-try {
-  // Connect and authenticate
-  await client.connect();
-  await client.authenticate();
-
-  // Execute commands
-  const players = await client.sendCommand('list');
-  console.log('Online players:', players);
-
-  const time = await client.sendCommand('time query daytime');
-  console.log('Current time:', time);
-
-  // Broadcast message
-  await client.sendCommand('say Hello from RCON!');
-
-} catch (error) {
-  console.error('RCON Error:', error);
-} finally {
-  client.disconnect();
-}
-```
-
-#### Event Handling
-
-```typescript
-import { RconClient } from './src/index.ts';
-
-const client = new RconClient(config);
-
-// Set up event listeners
-client.on('connected', () => {
-  console.log('🔌 Connected to server');
-});
-
-client.on('authenticated', () => {
-  console.log('🔐 Successfully authenticated');
-});
-
-client.on('disconnected', () => {
-  console.log('📤 Disconnected from server');
-});
-
-client.on('authFailed', (reason) => {
-  console.error('❌ Authentication failed:', reason);
-});
-
-client.on('error', (error) => {
-  console.error('💥 Connection error:', error);
-});
-```
-
-#### Advanced Usage
-
-```typescript
-import { RconClient, PacketBuilder, RconPacketType } from './src/index.ts';
-
-// Check connection status
-if (client.isConnected() && client.isAuth()) {
-  const response = await client.sendCommand('your_command');
-}
-
-// Use packet builder directly (advanced)
-const packet = PacketBuilder.createPacket(
-  1, 
-  RconPacketType.SERVERDATA_EXECCOMMAND, 
-  'list'
-);
-```
-
-## 🎮 Common Minecraft Commands
-
-| Command | Description |
-|---------|-------------|
-| `list` | List online players |
-| `time set day` | Set time to day |
-| `time set night` | Set time to night |
-| `time query daytime` | Get current game time |
-| `weather clear` | Clear weather |
-| `weather rain` | Set rain |
-| `weather thunder` | Set thunderstorm |
-| `say <message>` | Broadcast message to all players |
-| `tp <player> <x> <y> <z>` | Teleport player to coordinates |
-| `gamemode creative <player>` | Set player to creative mode |
-| `gamemode survival <player>` | Set player to survival mode |
-| `give <player> <item> <amount>` | Give items to player |
-| `kick <player> [reason]` | Kick player from server |
-| `ban <player> [reason]` | Ban player from server |
-| `whitelist add <player>` | Add player to whitelist |
-| `stop` | Stop the server |
-| `save-all` | Save the world |
-
-## ⚙️ Server Configuration
-
-To enable RCON on your Minecraft server, edit `server.properties`:
-
-```properties
-enable-rcon=true
-rcon.password=your_secure_password
-rcon.port=25575
-broadcast-rcon-to-ops=false
-```
-
-> ⚠️ **Security Warning**: Never expose RCON ports to the internet. RCON is not encrypted and can be subject to man-in-the-middle attacks.
-
-## 🔧 Development
-
-```bash
-# Development mode (with file watching)
-bun run dev
-
-# Linting
-bun run lint
-
-# Formatting
-bun run format
-```
-
-## 📁 Project Structure
-
-```
-rcon/
-├── src/
-│   ├── types/           # TypeScript type definitions
-│   ├── lib/             # Utility libraries
-│   ├── client/          # Core RCON client
-│   ├── cli/             # Command-line interface
-│   └── index.ts         # Main exports
-├── package.json         # Project configuration
-├── tsconfig.json        # TypeScript configuration
-├── biome.json          # Biome linter/formatter config
-└── README.md           # This file
-```
-
-## 🎯 API Reference
-
-### RconClient
-
-```typescript
-class RconClient extends EventEmitter<RconClientEvents>
-```
-
-#### Methods
-
-- `connect(): Promise<void>` - Connect to RCON server
-- `authenticate(): Promise<boolean>` - Authenticate with password
-- `sendCommand(command: string): Promise<string>` - Send command and get response
-- `disconnect(): void` - Disconnect from server
-- `isConnected(): boolean` - Check connection status
-- `isAuth(): boolean` - Check authentication status
-
-#### Events
-
-- `connected` - Fired when connected to server
-- `authenticated` - Fired when successfully authenticated
-- `disconnected` - Fired when disconnected from server
-- `authFailed` - Fired when authentication fails
-- `error` - Fired on connection errors
-
-### Types
-
-```typescript
-interface RconConfig {
-  host: string;
-  port: number;
-  password: string;
-  timeout?: number; // default: 5000ms
-}
-
-interface RconPacket {
-  length: number;
-  requestId: number;
-  type: RconPacketType;
-  payload: string;
-}
-
-enum RconPacketType {
-  SERVERDATA_AUTH = 3,
-  SERVERDATA_EXECCOMMAND = 2,
-  SERVERDATA_RESPONSE_VALUE = 0,
-  SERVERDATA_AUTH_RESPONSE = 2
-}
-```
-
-## 📚 References
-
-- [Minecraft RCON Protocol Documentation](https://minecraft.wiki/w/RCON)
-- [Bun Documentation](https://bun.sh/docs)
-- [TypeScript Documentation](https://www.typescriptlang.org/docs)
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-1. Fork the project
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
----
-
-Built with ❤️ using [Bun](https://bun.sh) and TypeScript
+- Built with [Clap](https://clap.rs/) for CLI parsing
+- Uses [Tokio](https://tokio.rs/) for async runtime
+- Implements the [Minecraft RCON Protocol](https://minecraft.wiki/w/RCON)
