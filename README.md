@@ -173,7 +173,7 @@ MIT License - see the LICENSE file for details.
 
 ## Built from 💖 by Etheria
 
-This project is crafted with love by the [Etheria](https://github.com/etheria-project) team. We're passionate about creating tools that make Minecraft server management easier and more enjoyable.
+This project is crafted with love by the [Hezaerd](https://github.com/hezaerd) for the [Etheria Team](https://github.com/etheria-project). I'm passionate about creating tools that make Minecraft server management easier and more enjoyable.
 
 ### Acknowledgments
 
